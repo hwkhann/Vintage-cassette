@@ -1,1 +1,377 @@
-# Vintage-cassette
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vintage Cassette Player</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@300;400&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: radial-gradient(ellipse at 50% 30%, #1e1a2e 0%, #0e0c18 70%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; font-family:'Special Elite',cursive; overflow:hidden;
+  }
+  .stars {
+    position:fixed; inset:0; pointer-events:none;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 55%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 25%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(2px 2px at 70% 40%, rgba(180,160,255,0.3) 0%, transparent 100%),
+      radial-gradient(2px 2px at 25% 55%, rgba(180,160,255,0.2) 0%, transparent 100%);
+  }
+  .scanlines {
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+    pointer-events:none; z-index:10;
+  }
+  .title {
+    color:#a090d0; font-size:11px; letter-spacing:7px;
+    text-transform:uppercase; margin-bottom:30px; opacity:0.7;
+    font-family:'Oswald',sans-serif; font-weight:300;
+  }
+
+  /* CASSETTE */
+  .cassette {
+    width:360px; height:220px;
+    background:linear-gradient(160deg,#1e1a2e 0%,#141020 60%,#1a1828 100%);
+    border-radius:18px 18px 14px 14px;
+    position:relative;
+    box-shadow:0 0 0 2px #3a3060, 0 8px 50px rgba(80,60,160,0.3), 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(180,160,255,0.1);
+    border:1px solid #2a2445;
+  }
+  .window {
+    position:absolute; top:28px; left:50%; transform:translateX(-50%);
+    width:240px; height:95px;
+    background:#06050f; border-radius:10px;
+    border:2px solid #2a2445;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,0.95), 0 0 0 1px #1a1530;
+    overflow:hidden; display:flex; align-items:center; justify-content:space-around; padding:0 20px;
+  }
+  .tape-bg { position:absolute; inset:0; background:linear-gradient(180deg,#080613 0%,#100e20 50%,#080613 100%); }
+  .tape-line {
+    position:absolute; top:50%; left:0; right:0; height:12px; margin-top:-6px;
+    background:linear-gradient(180deg,#0e0a1e,#1a1535,#0e0a1e);
+    box-shadow:0 0 8px rgba(120,80,200,0.2);
+  }
+  .reel { width:62px; height:62px; position:relative; z-index:2; flex-shrink:0; }
+  .reel svg { width:100%; height:100%; }
+
+  /* LABEL */
+  .label {
+    position:absolute; bottom:0; left:0; right:0; height:78px;
+    background:linear-gradient(135deg,#1a1040 0%,#0e0828 40%,#1e1448 100%);
+    border-radius:0 0 13px 13px; border-top:2px solid #2a1e50;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; overflow:hidden;
+  }
+  .label::before {
+    content:''; position:absolute; inset:0;
+    background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,0.01) 4px,rgba(255,255,255,0.01) 5px);
+  }
+  .label-title { font-family:'Special Elite',cursive; color:#c0aeff; font-size:15px; letter-spacing:3px; text-shadow:0 0 20px rgba(160,120,255,0.6); z-index:1; }
+  .label-sub { font-family:'Oswald',sans-serif; font-weight:300; color:#907ad0; font-size:9px; letter-spacing:4px; text-transform:uppercase; z-index:1; opacity:0.8; }
+  .label-side { font-family:'Oswald',sans-serif; font-weight:400; color:#e0d0ff; font-size:17px; z-index:1; background:rgba(0,0,0,0.4); padding:1px 10px; border-radius:3px; margin-top:2px; }
+
+  .screw { position:absolute; width:10px; height:10px; background:radial-gradient(circle at 35% 35%,#3a305a,#0e0c1a); border-radius:50%; border:1px solid #2a2245; }
+  .screw.tl{top:10px;left:12px} .screw.tr{top:10px;right:12px}
+  .screw.bl{bottom:84px;left:12px} .screw.br{bottom:84px;right:12px}
+  .notch { position:absolute; top:50%; transform:translateY(-50%); width:8px; height:30px; background:#080613; border-radius:4px; }
+  .notch.l{left:-1px} .notch.r{right:-1px}
+
+  /* WAVEFORM visualizer */
+  .wave-wrap { width:360px; height:40px; margin-top:18px; display:flex; align-items:center; justify-content:center; gap:2px; }
+  .wave-bar { width:4px; border-radius:2px; background:#2a2445; transition:height 0.1s ease, background 0.1s ease; height:4px; }
+
+  /* CONTROLS */
+  .controls { display:flex; gap:14px; margin-top:20px; align-items:center; }
+  .btn {
+    background:linear-gradient(160deg,#1e1a30 0%,#12101e 100%);
+    border:1px solid #3a3060; border-radius:8px; color:#a090d0; cursor:pointer;
+    padding:10px 16px; font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; transition:all 0.15s;
+    box-shadow:0 4px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(180,160,255,0.08);
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn:hover { background:linear-gradient(160deg,#2a2440,#18162a); color:#c0aeff; border-color:#5a50a0; }
+  .btn:active { transform:translateY(1px); }
+  .btn.active { background:linear-gradient(160deg,#2a1860,#180e38); color:#c0aeff; border-color:#7060c0; box-shadow:0 0 16px rgba(120,80,220,0.4); }
+  .btn svg { width:14px; height:14px; fill:currentColor; }
+
+  .song-info { margin-top:14px; color:#504880; font-size:10px; letter-spacing:3px; text-transform:uppercase; font-family:'Oswald',sans-serif; font-weight:300; }
+
+  .progress-wrap { width:360px; margin-top:10px; height:2px; background:#1a1530; border-radius:2px; overflow:hidden; }
+  .progress-bar { height:100%; background:linear-gradient(90deg,#4030a0,#a080ff); width:0%; transition:width 0.5s linear; box-shadow:0 0 8px rgba(160,120,255,0.5); }
+
+  /* glowing pulse on cassette when playing */
+  .cassette.playing { box-shadow:0 0 0 2px #3a3060, 0 8px 50px rgba(100,70,200,0.5), 0 0 80px rgba(80,50,160,0.2), inset 0 1px 0 rgba(180,160,255,0.1); }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="scanlines"></div>
+<div class="title">◈ Midnight Sessions ◈</div>
+
+<div class="cassette" id="cassette">
+  <div class="screw tl"></div><div class="screw tr"></div>
+  <div class="screw bl"></div><div class="screw br"></div>
+  <div class="notch l"></div><div class="notch r"></div>
+  <div class="window">
+    <div class="tape-bg"></div>
+    <div class="tape-line"></div>
+    <div class="reel"><svg viewBox="0 0 62 62" id="svgL">
+      <circle cx="31" cy="31" r="29" fill="#06050f" stroke="#2a2445" stroke-width="1.5"/>
+      <circle cx="31" cy="31" r="21" fill="#0e0c1e" stroke="#1e1a30" stroke-width="1"/>
+      <g fill="#2a2445">
+        <path d="M31 9 L33 22 L29 22 Z"/><path d="M31 53 L33 40 L29 40 Z"/>
+        <path d="M9 31 L22 29 L22 33 Z"/><path d="M53 31 L40 33 L40 29 Z"/>
+        <path d="M14.5 14.5 L23 22 L20.5 24.5 Z"/><path d="M47.5 47.5 L39 39 L41.5 36.5 Z"/>
+        <path d="M47.5 14.5 L39 23 L36.5 20.5 Z"/><path d="M14.5 47.5 L23 39 L25.5 41.5 Z"/>
+      </g>
+      <circle cx="31" cy="31" r="6" fill="#06050f" stroke="#3a3060" stroke-width="1.5"/>
+      <circle cx="31" cy="31" r="3" fill="#1a1530"/>
+    </svg></div>
+    <div class="reel"><svg viewBox="0 0 62 62" id="svgR">
+      <circle cx="31" cy="31" r="29" fill="#06050f" stroke="#2a2445" stroke-width="1.5"/>
+      <circle cx="31" cy="31" r="21" fill="#0e0c1e" stroke="#1e1a30" stroke-width="1"/>
+      <g fill="#2a2445">
+        <path d="M31 9 L33 22 L29 22 Z"/><path d="M31 53 L33 40 L29 40 Z"/>
+        <path d="M9 31 L22 29 L22 33 Z"/><path d="M53 31 L40 33 L40 29 Z"/>
+        <path d="M14.5 14.5 L23 22 L20.5 24.5 Z"/><path d="M47.5 47.5 L39 39 L41.5 36.5 Z"/>
+        <path d="M47.5 14.5 L39 23 L36.5 20.5 Z"/><path d="M14.5 47.5 L23 39 L25.5 41.5 Z"/>
+      </g>
+      <circle cx="31" cy="31" r="6" fill="#06050f" stroke="#3a3060" stroke-width="1.5"/>
+      <circle cx="31" cy="31" r="3" fill="#1a1530"/>
+    </svg></div>
+  </div>
+  <div class="label">
+    <div class="label-sub">◈ Calm Tapes Vol. I ◈</div>
+    <div class="label-title">NIGHT DRIFT</div>
+    <div class="label-side">SIDE A</div>
+  </div>
+</div>
+
+<!-- Waveform -->
+<div class="wave-wrap" id="waveWrap"></div>
+<div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+
+<div class="controls">
+  <button class="btn" id="rewBtn"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z"/></svg>REW</button>
+  <button class="btn" id="playBtn"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>PLAY</button>
+  <button class="btn" id="stopBtn"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>STOP</button>
+</div>
+<div class="song-info" id="songInfo">▷ PRESS PLAY</div>
+
+<script>
+// --- Build waveform bars ---
+const waveWrap = document.getElementById('waveWrap');
+const waveBars = [];
+for (let i = 0; i < 48; i++) {
+  const b = document.createElement('div');
+  b.className = 'wave-bar';
+  waveWrap.appendChild(b);
+  waveBars.push(b);
+}
+
+let ctx, masterGain, reverb, lp;
+let playing = false, angle = 0, animId, waveId, progId;
+let songTime = 0, songDuration = 90, rewindMode = false;
+let scheduled = [];
+
+function initAudio() {
+  if (ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = ctx.createGain();
+  masterGain.gain.value = 0.55;
+
+  // Lowpass for warmth
+  lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 2800; lp.Q.value = 0.4;
+
+  // Simple convolver reverb via delay network
+  const rev = ctx.createConvolver();
+  const len = ctx.sampleRate * 2.5;
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.2);
+  }
+  rev.buffer = buf;
+
+  const revGain = ctx.createGain(); revGain.gain.value = 0.45;
+  const dryGain = ctx.createGain(); dryGain.gain.value = 0.65;
+
+  masterGain.connect(lp);
+  lp.connect(dryGain); dryGain.connect(ctx.destination);
+  lp.connect(rev); rev.connect(revGain); revGain.connect(ctx.destination);
+}
+
+// --- Calm ambient music engine ---
+// Pentatonic scale in D minor: D3 F3 G3 A3 C4 D4 F4 G4 A4 C5 D5
+const penta = [146.83,174.61,196,220,261.63,293.66,349.23,392,440,523.25,587.33];
+const pad   = [146.83,220,293.66,440]; // Dm pad
+
+function note(freq, start, dur, vol=0.12, type='sine', detune=0) {
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type; o.frequency.value = freq; o.detune.value = detune;
+  o.connect(g); g.connect(masterGain);
+  const t = ctx.currentTime + start;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + dur*0.15);
+  g.gain.setValueAtTime(vol, t + dur*0.7);
+  g.gain.linearRampToValueAtTime(0, t + dur);
+  o.start(t); o.stop(t + dur + 0.05);
+  scheduled.push(o);
+}
+
+function scheduleCalmMusic() {
+  scheduled.forEach(n => { try { n.stop(0); } catch(e){} });
+  scheduled = [];
+
+  const loop = 32; // seconds per loop
+  for (let rep = 0; rep < 3; rep++) {
+    const off = rep * loop;
+
+    // Slow pad chords — Dm, Am, Bb, F
+    const chords = [
+      [146.83,175.00,220,293.66],   // Dm
+      [110,146.83,220,261.63],      // Am
+      [116.54,174.61,233.08,293.66],// Bb
+      [87.31,130.81,174.61,220],    // F
+    ];
+    chords.forEach((ch, i) => {
+      ch.forEach(f => {
+        note(f, off + i*8,     8.5, 0.055, 'sine');
+        note(f, off + i*8,     8.5, 0.03,  'triangle', 7);
+      });
+    });
+
+    // Gentle melody — slow, sparse, pentatonic
+    const mel = [
+      [293.66,0.7,0.5],[261.63,0.7,2],[220,0.8,4],[246.94,0.6,6],
+      [293.66,0.7,8.5],[261.63,0.7,10],[220,1.2,12],
+      [196,0.6,16],[220,0.7,18],[261.63,0.8,20],[293.66,1.0,22],
+      [349.23,0.7,24],[293.66,0.6,26],[261.63,0.8,28],[220,1.2,30],
+    ];
+    mel.forEach(([f,d,s]) => {
+      note(f, off+s, d*1.4, 0.10, 'triangle');
+      note(f, off+s, d*1.4, 0.03, 'sine', -5);
+    });
+
+    // Soft bass notes
+    const bassNotes = [
+      [73.42,1.2,0],[55,1.2,8],[58.27,1.2,16],[43.65,1.2,24],
+    ];
+    bassNotes.forEach(([f,d,s]) => note(f, off+s, d*2.5, 0.14, 'sine'));
+
+    // Gentle high shimmer (very soft)
+    [2,6,10,14,18,22,26,30].forEach((s,i) => {
+      const f = penta[(i*3) % penta.length] * 2;
+      note(f, off+s+Math.random()*0.5, 1.2, 0.025, 'sine');
+    });
+  }
+}
+
+// --- Reel animation ---
+function spinReels() {
+  angle += rewindMode ? -3 : 1.2;
+  document.getElementById('svgL').style.transform = `rotate(${angle}deg)`;
+  document.getElementById('svgR').style.transform = `rotate(${angle*1.08}deg)`;
+  animId = requestAnimationFrame(spinReels);
+}
+
+// --- Waveform animation ---
+function animateWave() {
+  waveBars.forEach((b, i) => {
+    if (playing) {
+      const t = Date.now()/1000;
+      const h = 4 + Math.abs(Math.sin(t*0.8 + i*0.35) * Math.sin(t*0.5+i*0.2) * 30);
+      const hue = 240 + i*1.5;
+      b.style.height = h + 'px';
+      b.style.background = `hsl(${hue},60%,${40+h*0.8}%)`;
+      b.style.boxShadow = h>15 ? `0 0 6px hsl(${hue},70%,60%)` : 'none';
+    } else {
+      b.style.height = '3px';
+      b.style.background = '#2a2445';
+      b.style.boxShadow = 'none';
+    }
+  });
+  waveId = requestAnimationFrame(animateWave);
+}
+
+// --- Progress ---
+function startProgress() {
+  clearInterval(progId);
+  progId = setInterval(() => {
+    songTime += 0.5;
+    if (songTime >= songDuration) songTime = 0;
+    document.getElementById('progress').style.width = (songTime/songDuration*100)+'%';
+  }, 500);
+}
+
+// --- Buttons ---
+document.getElementById('playBtn').addEventListener('click', async () => {
+  initAudio();
+  if (ctx.state === 'suspended') await ctx.resume();
+
+  if (playing) {
+    // Pause
+    playing = false;
+    cancelAnimationFrame(animId);
+    clearInterval(progId);
+    scheduled.forEach(n => { try { n.stop(0); } catch(e){} }); scheduled = [];
+    masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime+0.3);
+    document.getElementById('cassette').classList.remove('playing');
+    document.getElementById('playBtn').classList.remove('active');
+    document.getElementById('playBtn').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor"><path d="M8 5v14l11-7z"/></svg>PLAY';
+    document.getElementById('songInfo').textContent = '❙❙ PAUSED';
+  } else {
+    playing = true; rewindMode = false;
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.setValueAtTime(0, ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.55, ctx.currentTime+1.2);
+    scheduleCalmMusic();
+    spinReels();
+    startProgress();
+    document.getElementById('cassette').classList.add('playing');
+    document.getElementById('playBtn').classList.add('active');
+    document.getElementById('playBtn').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>PAUSE';
+    document.getElementById('songInfo').textContent = '♫  NIGHT DRIFT  —  SIDE A';
+  }
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+  playing = false; rewindMode = false;
+  cancelAnimationFrame(animId); clearInterval(progId);
+  scheduled.forEach(n => { try { n.stop(0); } catch(e){} }); scheduled = [];
+  if (masterGain) masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime+0.4);
+  songTime = 0;
+  document.getElementById('progress').style.width = '0%';
+  document.getElementById('cassette').classList.remove('playing');
+  document.getElementById('playBtn').classList.remove('active');
+  document.getElementById('playBtn').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor"><path d="M8 5v14l11-7z"/></svg>PLAY';
+  document.getElementById('songInfo').textContent = '■  STOPPED';
+  document.getElementById('svgL').style.transform='';
+  document.getElementById('svgR').style.transform='';
+});
+
+document.getElementById('rewBtn').addEventListener('click', () => {
+  if (!playing) return;
+  rewindMode = true;
+  songTime = Math.max(0, songTime - 10);
+  document.getElementById('progress').style.width = (songTime/songDuration*100)+'%';
+  document.getElementById('songInfo').textContent = '◀◀  REWINDING...';
+  setTimeout(() => { if (playing) { rewindMode=false; document.getElementById('songInfo').textContent='♫  NIGHT DRIFT  —  SIDE A'; }}, 1400);
+});
+
+// Start waveform loop always
+animateWave();
+</script>
+</body>
+</html>
